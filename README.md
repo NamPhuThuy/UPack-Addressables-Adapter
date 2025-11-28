@@ -1,0 +1,1 @@
+# UPack-Addressables-Adapter
