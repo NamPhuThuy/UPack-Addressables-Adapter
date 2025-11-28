@@ -11,29 +11,31 @@ namespace NamPhuThuy.AddressablesAdapter
 {
     public class AddressablesSerializer : EditorWindow
     {
-        private AddressableAssetGroup targetGroup;
-        private string prefixName = "Level ";
-        
-        private int idOffset = 0;
+        private AddressableAssetGroup _targetGroup;
+        private string _prefixName = "Level ";
+        private int _idOffset = 0;
         
         // Assets list
-        private List<GameObject> assetList = new List<GameObject>();
-        private Vector2 scrollPos;
+        private List<GameObject> _assetList = new List<GameObject>();
+        private Vector2 _scrollPos;
+        private string _defaultGroupName = "Normal Level";
+
+       
+
+        #region Callbacks
 
         [MenuItem("Tools/NamPhuThuy - AddressablesAdapter/Addressables Serializer")]
         private static void ShowWindow()
         {
-            GetWindow<AddressablesSerializer>("Addressables Serializer");
+            GetWindow<AddressablesSerializer>($"{nameof(AddressablesSerializer)}");
         }
-
-        #region Callbacks
-
+        
         private void OnEnable()
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings != null)
             {
-                targetGroup = settings.FindGroup("Normal Level");
+                _targetGroup = settings.FindGroup(_defaultGroupName);
             }
         }
 
@@ -49,27 +51,27 @@ namespace NamPhuThuy.AddressablesAdapter
             }
 
             EditorGUILayout.LabelField("Target Addressables Group", EditorStyles.boldLabel);
-            targetGroup = (AddressableAssetGroup)EditorGUILayout.ObjectField(
+            _targetGroup = (AddressableAssetGroup)EditorGUILayout.ObjectField(
                 "Group",
-                targetGroup,
+                _targetGroup,
                 typeof(AddressableAssetGroup),
                 false
             );
 
-            if (targetGroup == null)
+            if (_targetGroup == null)
             {
-                EditorGUILayout.HelpBox("Select or create a group named `Normal Level`.", MessageType.Warning);
+                EditorGUILayout.HelpBox($"Select or create a group named `{_defaultGroupName}`.", MessageType.Warning);
             }
             
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Address Config", EditorStyles.boldLabel);
-            prefixName = EditorGUILayout.TextField("Prefix Name", prefixName);
+            _prefixName = EditorGUILayout.TextField(nameof(_prefixName), _prefixName);
             
             GUIContent idOffsetLabel = new GUIContent(
                 "ID Offset",
-                $"The asset-id will start from {idOffset + 1}"
+                $"The asset-id will start from {_idOffset + 1}"
             );
-            idOffset = EditorGUILayout.IntField(idOffsetLabel, idOffset);
+            _idOffset = EditorGUILayout.IntField(idOffsetLabel, _idOffset);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Level prefabs", EditorStyles.boldLabel);
@@ -88,29 +90,29 @@ namespace NamPhuThuy.AddressablesAdapter
                     if (string.IsNullOrEmpty(path))
                         continue;
 
-                    if (!assetList.Contains(go))
+                    if (!_assetList.Contains(go))
                     {
-                        assetList.Add(go);
+                        _assetList.Add(go);
                     }
                 }
             }
 
             if (GUILayout.Button("Clear List"))
             {
-                assetList.Clear();
+                _assetList.Clear();
             }
 
             EditorGUILayout.Space();
 
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Height(250));
-            for (int i = 0; i < assetList.Count; i++)
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(250));
+            for (int i = 0; i < _assetList.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField($"[{i}]", GUILayout.Width(30));
-                assetList[i] = (GameObject)EditorGUILayout.ObjectField(assetList[i], typeof(GameObject), false);
+                _assetList[i] = (GameObject)EditorGUILayout.ObjectField(_assetList[i], typeof(GameObject), false);
                 if (GUILayout.Button("X", GUILayout.Width(20)))
                 {
-                    assetList.RemoveAt(i);
+                    _assetList.RemoveAt(i);
                     i--;
                 }
 
@@ -121,7 +123,7 @@ namespace NamPhuThuy.AddressablesAdapter
 
             EditorGUILayout.Space();
 
-            GUI.enabled = targetGroup != null && assetList.Count > 0;
+            GUI.enabled = _targetGroup != null && _assetList.Count > 0;
             if (GUILayout.Button("Apply To Addressables"))
             {
                 AddPrefabsToAddressables(settings);
@@ -132,9 +134,11 @@ namespace NamPhuThuy.AddressablesAdapter
 
         #endregion
 
+        #region Main Functions
+
         private void AddPrefabsToAddressables(AddressableAssetSettings settings)
         {
-            if (targetGroup == null)
+            if (_targetGroup == null)
             {
                 Debug.LogError("Normal Level group is not set.");
                 return;
@@ -142,23 +146,22 @@ namespace NamPhuThuy.AddressablesAdapter
 
             Undo.RecordObject(settings, "Add Level Prefabs To Addressables");
 
-            for (int i = 0; i < assetList.Count; i++)
+            for (int i = 0; i < _assetList.Count; i++)
             {
-                var prefab = assetList[i];
-                if (prefab == null)
-                    continue;
+                var asset = _assetList[i];
+                if (asset == null) continue;
 
-                string assetPath = AssetDatabase.GetAssetPath(prefab);
+                string assetPath = AssetDatabase.GetAssetPath(asset);
                 if (string.IsNullOrEmpty(assetPath))
                 {
-                    Debug.LogWarning($"Prefab at index {i} has no valid asset path.");
+                    Debug.LogWarning($"Asset at index {i} has no valid asset path.");
                     continue;
                 }
 
                 string guid = AssetDatabase.AssetPathToGUID(assetPath);
                 if (string.IsNullOrEmpty(guid))
                 {
-                    Debug.LogWarning($"Could not get GUID for prefab at path {assetPath}");
+                    Debug.LogWarning($"Could not get GUID for asset at path {assetPath}");
                     continue;
                 }
 
@@ -166,25 +169,27 @@ namespace NamPhuThuy.AddressablesAdapter
                 AddressableAssetEntry entry = settings.FindAssetEntry(guid);
                 if (entry == null)
                 {
-                    entry = settings.CreateOrMoveEntry(guid, targetGroup, readOnly: false, postEvent: false);
+                    entry = settings.CreateOrMoveEntry(guid, _targetGroup, readOnly: false, postEvent: false);
                 }
-                else if (entry.parentGroup != targetGroup)
+                else if (entry.parentGroup != _targetGroup)
                 {
-                    settings.MoveEntry(entry, targetGroup);
+                    settings.MoveEntry(entry, _targetGroup);
                 }
 
                 // Set address: "Level <order>"
-                int levelId = idOffset + i + 1;
-                string address = $"Level {levelId}";
+                int assetId = _idOffset + i + 1;
+                string address = $"Level {assetId}";
                 entry.address = address;
 
-                Debug.Log($"Set addressable: {prefab.name} -> Group: {targetGroup.Name}, Address: {address}");
+                Debug.Log($"Set addressable: {asset.name} -> Group: {_targetGroup.Name}, Address: {address}");
             }
 
             // Save settings
             EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssets();
         }
+
+        #endregion
     }
 
 }
