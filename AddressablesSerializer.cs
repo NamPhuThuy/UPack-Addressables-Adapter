@@ -1,12 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets;
-using UnityEditor.AddressableAssets.Settings;
+
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 #endif
 
+#if UNITY_EDITOR
 namespace NamPhuThuy.AddressablesAdapter
 {
     public class AddressablesSerializer : EditorWindow
@@ -193,3 +195,4 @@ namespace NamPhuThuy.AddressablesAdapter
     }
 
 }
+#endif
