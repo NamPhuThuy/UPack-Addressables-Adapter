@@ -22,11 +22,9 @@ namespace NamPhuThuy.AddressablesAdapter
         private Vector2 _scrollPos;
         private string _defaultGroupName = "Normal Level";
 
-       
-
         #region Callbacks
 
-        [MenuItem("Tools/NamPhuThuy - AddressablesAdapter/Addressables Serializer")]
+        [MenuItem("NamPhuThuy/AddressablesAdapter/Addressables Serializer")]
         private static void ShowWindow()
         {
             GetWindow<AddressablesSerializer>($"{nameof(AddressablesSerializer)}");
