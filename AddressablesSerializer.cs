@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditorInternal;
 #endif
 
 #if UNITY_EDITOR
@@ -19,6 +20,7 @@ namespace NamPhuThuy.AddressablesAdapter
         
         // Assets list
         private List<GameObject> _assetList = new List<GameObject>();
+        private ReorderableList _reorderableList;
         private Vector2 _scrollPos;
         private string _defaultGroupName = "Normal Level";
 
@@ -37,6 +39,8 @@ namespace NamPhuThuy.AddressablesAdapter
             {
                 _targetGroup = settings.FindGroup(_defaultGroupName);
             }
+            
+            InitReorderableList();
         }
 
         private void OnGUI()
@@ -74,7 +78,7 @@ namespace NamPhuThuy.AddressablesAdapter
             _idOffset = EditorGUILayout.IntField(idOffsetLabel, _idOffset);
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Level prefabs", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Assets", EditorStyles.boldLabel);
 
             if (GUILayout.Button("Add Selected Assets"))
             {
@@ -95,16 +99,31 @@ namespace NamPhuThuy.AddressablesAdapter
                         _assetList.Add(go);
                     }
                 }
+                
+                // Refresh list after changes
+                _reorderableList.list = _assetList;
             }
 
             if (GUILayout.Button("Clear List"))
             {
                 _assetList.Clear();
+                _reorderableList.list = _assetList;
             }
 
             EditorGUILayout.Space();
 
+            // Optional: put the list inside a box and scroll view
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(250));
+            using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+            {
+                float listHeight = _assetList.Count * (EditorGUIUtility.singleLineHeight + 6f) +
+                                   EditorGUIUtility.singleLineHeight + 10f; // header
+                var rect = GUILayoutUtility.GetRect(0, listHeight, GUILayout.ExpandWidth(true));
+                _reorderableList.DoList(rect);
+            }
+            EditorGUILayout.EndScrollView();
+            
+            /*_scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(250));
             for (int i = 0; i < _assetList.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -119,9 +138,9 @@ namespace NamPhuThuy.AddressablesAdapter
                 EditorGUILayout.EndHorizontal();
             }
 
-            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndScrollView();*/
 
-            EditorGUILayout.Space();
+            EditorGUILayout.Space(10);
 
             GUI.enabled = _targetGroup != null && _assetList.Count > 0;
             if (GUILayout.Button("Apply To Addressables"))
@@ -134,6 +153,42 @@ namespace NamPhuThuy.AddressablesAdapter
 
         #endregion
 
+        #region Initialization
+
+        private void InitReorderableList()
+        {
+            _reorderableList = new ReorderableList(
+                _assetList,
+                typeof(GameObject),
+                draggable: true,
+                displayHeader: true,
+                displayAddButton: false,
+                displayRemoveButton: false
+            );
+
+            _reorderableList.drawHeaderCallback = rect =>
+            {
+                EditorGUI.LabelField(rect, "Level prefabs (drag to reorder)");
+            };
+
+            _reorderableList.drawElementCallback = (rect, index, isActive, isFocused) =>
+            {
+                if (index < 0 || index >= _assetList.Count) return;
+
+                rect.y += 2;
+                rect.height = EditorGUIUtility.singleLineHeight;
+
+                _assetList[index] = (GameObject)EditorGUI.ObjectField(
+                    rect,
+                    _assetList[index],
+                    typeof(GameObject),
+                    false
+                );
+            };
+        }
+
+        #endregion
+        
         #region Main Functions
 
         private void AddPrefabsToAddressables(AddressableAssetSettings settings)
