@@ -116,29 +116,12 @@ namespace NamPhuThuy.AddressablesAdapter
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(250));
             using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
-                float listHeight = _assetList.Count * (EditorGUIUtility.singleLineHeight + 6f) +
+                float listHeight = (_assetList.Count * (EditorGUIUtility.singleLineHeight + 6f)) +
                                    EditorGUIUtility.singleLineHeight + 10f; // header
                 var rect = GUILayoutUtility.GetRect(0, listHeight, GUILayout.ExpandWidth(true));
                 _reorderableList.DoList(rect);
             }
             EditorGUILayout.EndScrollView();
-            
-            /*_scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(250));
-            for (int i = 0; i < _assetList.Count; i++)
-            {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"[{i}]", GUILayout.Width(30));
-                _assetList[i] = (GameObject)EditorGUILayout.ObjectField(_assetList[i], typeof(GameObject), false);
-                if (GUILayout.Button("X", GUILayout.Width(20)))
-                {
-                    _assetList.RemoveAt(i);
-                    i--;
-                }
-
-                EditorGUILayout.EndHorizontal();
-            }
-
-            EditorGUILayout.EndScrollView();*/
 
             EditorGUILayout.Space(10);
 
