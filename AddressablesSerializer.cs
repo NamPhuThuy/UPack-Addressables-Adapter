@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-
+using System.Linq;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -19,10 +19,13 @@ namespace NamPhuThuy.AddressablesAdapter
         private int _idOffset = 0;
         
         // Assets list
-        private List<GameObject> _assetList = new List<GameObject>();
+        private List<Object> _assetList = new List<Object>();
         private ReorderableList _reorderableList;
         private Vector2 _scrollPos;
         private string _defaultGroupName = "Normal Level";
+        
+        // New: input field for groups to create
+        private string _groupNamesInput = "Normal Level, Hard Level, UI, Audio";
 
         #region Callbacks
 
@@ -85,18 +88,18 @@ namespace NamPhuThuy.AddressablesAdapter
                 var selectedObjects = Selection.objects;
                 foreach (var obj in selectedObjects)
                 {
-                    var go = obj as GameObject;
-                    if (go == null)
-                        continue;
-
-                    // Optional: ensure it's actually a prefab asset, not a scene object
-                    var path = AssetDatabase.GetAssetPath(go);
+                    // Optional: keep only asset types you care about
+                    // if (obj is not GameObject && obj is not Sprite && obj is not Texture2D) continue;
+                    var path = AssetDatabase.GetAssetPath(obj);
                     if (string.IsNullOrEmpty(path))
-                        continue;
-
-                    if (!_assetList.Contains(go))
                     {
-                        _assetList.Add(go);
+                        Debug.LogWarning(message: $"Cant find {obj.name}");
+                        continue; 
+                    }
+
+                    if (!_assetList.Contains(obj))
+                    {
+                        _assetList.Add(obj);
                     }
                 }
                 
@@ -130,6 +133,27 @@ namespace NamPhuThuy.AddressablesAdapter
             {
                 AddPrefabsToAddressables(settings);
             }
+            EditorGUILayout.Space(10);
+            
+            // New: field to specify groups to create
+            EditorGUILayout.LabelField("Create Addressables Groups", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Enter group names separated by commas.\nExample: Normal Level, Hard Level, UI, Audio",
+                MessageType.Info);
+            _groupNamesInput = EditorGUILayout.TextField("Groups To Create", _groupNamesInput);
+
+            if (GUILayout.Button("Create Groups"))
+            {
+                var groupNames = _groupNamesInput
+                    .Split(',')
+                    .Select(name => name.Trim())
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .ToList();
+
+                CreateGroups(settings, groupNames);
+            }
+
+            
 
             GUI.enabled = true;
         }
@@ -142,7 +166,7 @@ namespace NamPhuThuy.AddressablesAdapter
         {
             _reorderableList = new ReorderableList(
                 _assetList,
-                typeof(GameObject),
+                typeof(Object),
                 draggable: true,
                 displayHeader: true,
                 displayAddButton: false,
@@ -151,7 +175,7 @@ namespace NamPhuThuy.AddressablesAdapter
 
             _reorderableList.drawHeaderCallback = rect =>
             {
-                EditorGUI.LabelField(rect, "Level prefabs (drag to reorder)");
+                EditorGUI.LabelField(rect, "Assets (prefabs, sprites, textures, etc. - drag to reorder)");
             };
 
             _reorderableList.drawElementCallback = (rect, index, isActive, isFocused) =>
@@ -161,10 +185,10 @@ namespace NamPhuThuy.AddressablesAdapter
                 rect.y += 2;
                 rect.height = EditorGUIUtility.singleLineHeight;
 
-                _assetList[index] = (GameObject)EditorGUI.ObjectField(
+                _assetList[index] = EditorGUI.ObjectField(
                     rect,
                     _assetList[index],
-                    typeof(GameObject),
+                    typeof(Object), // <- allow any asset type
                     false
                 );
             };
@@ -227,6 +251,37 @@ namespace NamPhuThuy.AddressablesAdapter
             AssetDatabase.SaveAssets();
         }
 
+        // New helper: create several Addressables groups at once
+        private void CreateGroups(AddressableAssetSettings settings, List<string> groupNames)
+        {
+            if (settings == null || groupNames == null || groupNames.Count == 0)
+                return;
+
+            Undo.RecordObject(settings, "Create Addressables Groups");
+
+            foreach (var groupName in groupNames)
+            {
+                if (string.IsNullOrWhiteSpace(groupName))
+                    continue;
+
+                var existing = settings.FindGroup(groupName);
+                if (existing != null)
+                    continue;
+
+                var group = settings.CreateGroup(
+                    groupName,
+                    setAsDefaultGroup: false,
+                    readOnly: false,
+                    postEvent: false,
+                    settings.DefaultGroup.Schemas);
+
+                Debug.Log($"Created Addressables group: {groupName}");
+            }
+
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssets();
+        }
+        
         #endregion
     }
 
