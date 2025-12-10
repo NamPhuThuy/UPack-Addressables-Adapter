@@ -12,9 +12,10 @@ using UnityEditorInternal;
 #if UNITY_EDITOR
 namespace NamPhuThuy.AddressablesAdapter
 {
-    public class AddressablesSerializer : EditorWindow
+    public class AddressablesTool : EditorWindow
     {
         private AddressableAssetGroup _targetGroup;
+        private AddressableAssetSettings _addressableAssetSettings;
         private string _prefixName = "Level ";
         private int _idOffset = 0;
         
@@ -29,18 +30,18 @@ namespace NamPhuThuy.AddressablesAdapter
 
         #region Callbacks
 
-        [MenuItem("NamPhuThuy/AddressablesAdapter/Addressables Serializer")]
+        [MenuItem("NamPhuThuy/AddressablesAdapter/Addressables Tool")]
         private static void ShowWindow()
         {
-            GetWindow<AddressablesSerializer>($"{nameof(AddressablesSerializer)}");
+            GetWindow<AddressablesTool>($"{nameof(AddressablesTool)}");
         }
         
         private void OnEnable()
         {
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (settings != null)
+            _addressableAssetSettings = AddressableAssetSettingsDefaultObject.Settings;
+            if (_addressableAssetSettings != null)
             {
-                _targetGroup = settings.FindGroup(_defaultGroupName);
+                _targetGroup = _addressableAssetSettings.FindGroup(_defaultGroupName);
             }
             
             InitReorderableList();
@@ -48,8 +49,7 @@ namespace NamPhuThuy.AddressablesAdapter
 
         private void OnGUI()
         {
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (settings == null)
+            if (_addressableAssetSettings == null)
             {
                 EditorGUILayout.HelpBox(
                     "Addressables not initialized. Use `Window\\Asset Management\\Addressables\\Groups` first.",
@@ -57,6 +57,17 @@ namespace NamPhuThuy.AddressablesAdapter
                 return;
             }
 
+            GUISerializer();
+            EditorGUILayout.Space(10);
+            
+            GUIGroupCreator();
+            EditorGUILayout.Space(10);
+
+            GUI.enabled = true;
+        }
+
+        private void GUISerializer()
+        {
             EditorGUILayout.LabelField("Target Addressables Group", EditorStyles.boldLabel);
             _targetGroup = (AddressableAssetGroup)EditorGUILayout.ObjectField(
                 "Group",
@@ -131,11 +142,12 @@ namespace NamPhuThuy.AddressablesAdapter
             GUI.enabled = _targetGroup != null && _assetList.Count > 0;
             if (GUILayout.Button("Apply To Addressables"))
             {
-                AddPrefabsToAddressables(settings);
+                AddPrefabsToAddressables(_addressableAssetSettings);
             }
-            EditorGUILayout.Space(10);
-            
-            // New: field to specify groups to create
+        }
+
+        private void GUIGroupCreator()
+        {
             EditorGUILayout.LabelField("Create Addressables Groups", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Enter group names separated by commas.\nExample: Normal Level, Hard Level, UI, Audio",
@@ -146,16 +158,12 @@ namespace NamPhuThuy.AddressablesAdapter
             {
                 var groupNames = _groupNamesInput
                     .Split(',')
-                    .Select(name => name.Trim())
-                    .Where(name => !string.IsNullOrEmpty(name))
+                    .Select(groupName => groupName.Trim())
+                    .Where(groupName => !string.IsNullOrEmpty(groupName))
                     .ToList();
 
-                CreateGroups(settings, groupNames);
+                CreateGroups(_addressableAssetSettings, groupNames);
             }
-
-            
-
-            GUI.enabled = true;
         }
 
         #endregion
