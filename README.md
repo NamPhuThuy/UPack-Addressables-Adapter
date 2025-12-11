@@ -22,3 +22,6 @@ Step 2:
 
 
 Set the Remote Build Path to a local folder where the Addressables content will be built, e.g. `Assets/../AddressablesContent/[BuildTarget]
+
+# Need update tut
+The flow when modify data for remote-addessables-groups to not break the flow in newer-builds
