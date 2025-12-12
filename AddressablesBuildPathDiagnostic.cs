@@ -1,9 +1,11 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 using System.IO;
 using System.Collections.Generic;
 using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
 public class AddressablesBuildPathDiagnostic : EditorWindow
 {
@@ -44,7 +46,7 @@ public class AddressablesBuildPathDiagnostic : EditorWindow
         {
             if (group == null) continue;
             
-            var bundleSchema = group.GetSchema<UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema>();
+            var bundleSchema = group.GetSchema<BundledAssetGroupSchema>();
             if (bundleSchema == null)
             {
                 Debug.Log($"⚠️ Group: {group.name} - NOT bundled (skipped)\n");
@@ -155,6 +157,7 @@ public class AddressablesBuildPathDiagnostic : EditorWindow
             Debug.Log($"   - {relativePath} ({info.Length / 1024f:F2} KB)");
         }
         
-        Debug.Log($"   Total: {totalSize / (1024f * 1024f):F2} MB");
+        Debug.Log($"   Total: {totalSize / (1024f * 1024f):FU} MB");
     }
 }
+#endif
