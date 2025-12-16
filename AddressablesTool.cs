@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -139,10 +138,10 @@ namespace NamPhuThuy.AddressablesAdapter
 
             EditorGUILayout.Space(10);
 
-            GUI.enabled = _targetGroup != null && _assetList.Count > 0;
+            // GUI.enabled = _targetGroup != null && _assetList.Count > 0;
             if (GUILayout.Button("Apply To Addressables"))
             {
-                AddPrefabsToAddressables(_addressableAssetSettings);
+                ListAssetsIntoGroups(_addressableAssetSettings);
             }
         }
 
@@ -203,61 +202,8 @@ namespace NamPhuThuy.AddressablesAdapter
         }
 
         #endregion
-        
-        #region Main Functions
 
-        private void AddPrefabsToAddressables(AddressableAssetSettings settings)
-        {
-            if (_targetGroup == null)
-            {
-                Debug.LogError("Normal Level group is not set.");
-                return;
-            }
-
-            Undo.RecordObject(settings, "Add Level Prefabs To Addressables");
-
-            for (int i = 0; i < _assetList.Count; i++)
-            {
-                var asset = _assetList[i];
-                if (asset == null) continue;
-
-                string assetPath = AssetDatabase.GetAssetPath(asset);
-                if (string.IsNullOrEmpty(assetPath))
-                {
-                    Debug.LogWarning($"Asset at index {i} has no valid asset path.");
-                    continue;
-                }
-
-                string guid = AssetDatabase.AssetPathToGUID(assetPath);
-                if (string.IsNullOrEmpty(guid))
-                {
-                    Debug.LogWarning($"Could not get GUID for asset at path {assetPath}");
-                    continue;
-                }
-
-                // Try to get existing entry
-                AddressableAssetEntry entry = settings.FindAssetEntry(guid);
-                if (entry == null)
-                {
-                    entry = settings.CreateOrMoveEntry(guid, _targetGroup, readOnly: false, postEvent: false);
-                }
-                else if (entry.parentGroup != _targetGroup)
-                {
-                    settings.MoveEntry(entry, _targetGroup);
-                }
-
-                // Set address: "Level <order>"
-                int assetId = _idOffset + i + 1;
-                string address = $"Level {assetId}";
-                entry.address = address;
-
-                Debug.Log($"Set addressable: {asset.name} -> Group: {_targetGroup.Name}, Address: {address}");
-            }
-
-            // Save settings
-            EditorUtility.SetDirty(settings);
-            AssetDatabase.SaveAssets();
-        }
+        #region Create Groups Function
 
         // New helper: create several Addressables groups at once
         private void CreateGroups(AddressableAssetSettings settings, List<string> groupNames)
@@ -288,6 +234,104 @@ namespace NamPhuThuy.AddressablesAdapter
 
             EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssets();
+        }
+
+        #endregion
+        
+        #region List Assets into Groups
+
+        private void ListAssetsIntoGroups(AddressableAssetSettings settings)
+        {
+            // Adjust the addresses first
+            Undo.RecordObject(settings, "Modified Assets Addresses");
+            ModifyAssetAddress(settings);
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssets();
+            
+            // Add assets to groups
+            if (_targetGroup == null)
+            {
+                Debug.LogError("Normal Level group is not set.");
+                return;
+            }
+            
+            Undo.RecordObject(settings, "Add Assets To Addressables");
+            AddAssets(settings);
+
+            // Save settings
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssets();
+        }
+
+        private void ModifyAssetAddress(AddressableAssetSettings settings)
+        {
+            
+            for (int i = 0; i < _assetList.Count; i++)
+            {
+                var asset = _assetList[i];
+                if (asset == null)
+                {
+                    continue;
+                }
+
+                string assetPath = AssetDatabase.GetAssetPath(asset);
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    Debug.LogWarning($"Asset at index {i} has no valid asset path.");
+                    continue;
+                }
+
+                string guid = AssetDatabase.AssetPathToGUID(assetPath);
+                if (string.IsNullOrEmpty(guid))
+                {
+                    Debug.LogWarning($"Could not get GUID for asset at path {assetPath}");
+                    continue;
+                }
+
+                AddressableAssetEntry entry = settings.FindAssetEntry(guid);
+
+                // Set address: "Level <order>"
+                int assetId = _idOffset + i + 1;
+                string address = $"{_prefixName} {assetId}";
+                entry.address = address;
+            }
+        }
+
+        private void AddAssets(AddressableAssetSettings settings)
+        {
+            for (int i = 0; i < _assetList.Count; i++)
+            {
+                var asset = _assetList[i];
+                if (asset == null)
+                {
+                    continue;
+                }
+
+                string assetPath = AssetDatabase.GetAssetPath(asset);
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    Debug.LogWarning($"Asset at index {i} has no valid asset path.");
+                    continue;
+                }
+
+                string guid = AssetDatabase.AssetPathToGUID(assetPath);
+                if (string.IsNullOrEmpty(guid))
+                {
+                    Debug.LogWarning($"Could not get GUID for asset at path {assetPath}");
+                    continue;
+                }
+                
+                // Try to get existing entry
+                AddressableAssetEntry entry = settings.FindAssetEntry(guid);
+                if (entry == null)
+                {
+                    entry = settings.CreateOrMoveEntry(guid, _targetGroup, readOnly: false, postEvent: false);
+                }
+                else if (entry.parentGroup != _targetGroup)
+                {
+                    settings.MoveEntry(entry, _targetGroup);
+                }
+            }
         }
         
         #endregion
