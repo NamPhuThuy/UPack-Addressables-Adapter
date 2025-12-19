@@ -119,6 +119,27 @@ namespace UnityEngine.AddressableAssets
 
         public static bool ContainsKey(object key)
             => _keys.Contains(key);
+        
+        public static IReadOnlyList<IResourceLocation> GetLocations(string key)
+        {
+            if (!GuardKey(key, out key))
+            {
+                if (ExceptionHandle == ExceptionHandleType.THROW)
+                    throw new InvalidKeyException(key);
+
+                if (ExceptionHandle == ExceptionHandleType.LOG)
+                    Debug.LogException(new InvalidKeyException(key));
+
+                return _noLocation;
+            }
+
+            if (!_locations.TryGetValue(key, out var list))
+                return _noLocation;
+
+            return list;
+        }
+
+        #region Scenes
 
         public static bool TryGetScene(string key, out SceneInstance scene)
         {
@@ -171,24 +192,11 @@ namespace UnityEngine.AddressableAssets
             return false;
         }
 
-        public static IReadOnlyList<IResourceLocation> GetLocations(string key)
-        {
-            if (!GuardKey(key, out key))
-            {
-                if (ExceptionHandle == ExceptionHandleType.THROW)
-                    throw new InvalidKeyException(key);
+        #endregion
 
-                if (ExceptionHandle == ExceptionHandleType.LOG)
-                    Debug.LogException(new InvalidKeyException(key));
+      
 
-                return _noLocation;
-            }
-
-            if (!_locations.TryGetValue(key, out var list))
-                return _noLocation;
-
-            return list;
-        }
+        #region Assets
 
         public static T GetAsset<T>(string key) where T : Object
         {
@@ -341,6 +349,10 @@ namespace UnityEngine.AddressableAssets
             reference.ReleaseAsset();
         }
 
+        #endregion
+
+        #region Instances
+
         public static IReadOnlyList<GameObject> GetInstances(string key)
         {
             if (!GuardKey(key, out key))
@@ -490,5 +502,7 @@ namespace UnityEngine.AddressableAssets
             _instances.Remove(key);
             PoolInstanceList(instanceList);
         }
+
+        #endregion
     }
 }
