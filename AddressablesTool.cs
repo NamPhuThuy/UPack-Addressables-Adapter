@@ -292,7 +292,7 @@ namespace NamPhuThuy.AddressablesAdapter
 
                 // Set address: "Level <order>"
                 int assetId = _idOffset + i + 1;
-                string address = $"{_prefixName} {assetId}";
+                string address = $"{_prefixName}{assetId}";
                 entry.address = address;
             }
         }
