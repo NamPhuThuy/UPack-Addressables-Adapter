@@ -1,10 +1,12 @@
 # UPack-Addressables-Adapter
 
-UPack-Addressables-Adapter/  
-├─ AddressablesSerializer.cs  // Serializes assets into Addressables Groups
+<pre>
+UPack-Addressables-Adapter/    
+├─ AddressablesToolr.cs  // Serializer Tool and Group-creating Tool   
 ├─ GithubDownloader.cs // Download Addressables content from GitHub
-├─ LICENSE
-├─ README.md
+├─ LICENSE  
+├─ README.md  
+</pre>
 
 Some scripts are modified from: https://github.com/laicasaane/unity-addressables-manager
 ├─ AddressablesManager.cs // Addressables Manager for Unity Editor
