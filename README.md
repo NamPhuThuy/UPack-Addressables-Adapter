@@ -27,3 +27,25 @@ Set the Remote Build Path to a local folder where the Addressables content will 
 
 # Need update tut
 The flow when modify data for remote-addessables-groups to not break the flow in newer-builds
+
+# Note
+After the first download, Addressables will caches downloaded bundles locally automatically. 
+Where the Cache Lives on Device
+- Android:  /data/data/<package>/cache/com.unity.addressables/
+- iOS:      <AppSandbox>/Library/Caches/com.unity.addressables/
+
+
+## 3 Situations Where Cache Gets Invalidated
+1. OS Clears Cache (Biggest Risk on Mobile)
+Android/iOS will DELETE the cache automatically when:
+- Device storage is critically low
+- User manually clears app cache in Settings
+- On iOS: system cache pressure purge
+
+2. You Push a New Bundle to CDN
+Old bundle hash: a1b2c3   (cached on device)
+New bundle hash: x9y8z7   (after you rebuild)
+→ Addressables detects hash mismatch → re-downloads automatically
+
+3. Player Reinstalls the App
+Full cache wipe → fresh download required
